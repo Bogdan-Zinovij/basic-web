@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>GET Request Example</title>
+        <style>
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            table,
+            th,
+            td {
+                border: 1px solid black;
+            }
+
+            th,
+            td {
+                padding: 8px;
+                text-align: left;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Сторінка Адміністратора:</h1>
+        <table id="response-table">
+            <thead>
+                <tr></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button id="logout-button">Вийти</button>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script>
+            const responseTable = document.getElementById("response-table");
+            const token = window.localStorage.getItem("accessToken");
+            const adminId = window.localStorage.getItem("id");
+
+            if (token) {
+                axios.defaults.headers.common[
+                    "Authorization"
+                ] = `Bearer ${token}`;
+            }
+
+            function deleteUser(userId) {
+                axios
+                    .delete(
+                        `http://localhost:8080/api/v1/users/${userId}`,
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${window.localStorage.getItem(
+                                    "accessToken"
+                                )}`,
+                            },
+                        }
+                    )
+                    .then(function () {
+                        refreshTable();
+                    })
+                    .catch(function (error) {
+                        console.error(
+                            "Помилка при видаленні: " + error.message
+                        );
+                    });
+            }
+
+            function createTableHeader(data) {
+                const thead = responseTable.querySelector("thead tr");
+                thead.innerHTML = "";
+
+                for (const key in data[0]) {
+                    if (data[0].hasOwnProperty(key)) {
+                        const th = document.createElement("th");
+                        th.textContent = key;
+                        thead.appendChild(th);
+                    }
+                }
+
+                const editHeader = document.createElement("th");
+                editHeader.textContent = "Редагувати";
+                thead.appendChild(editHeader);
+
+                const deleteHeader = document.createElement("th");
+                deleteHeader.textContent = "Видалити";
+                thead.appendChild(deleteHeader);
+            }
+
+            function refreshTable() {
+                axios
+                    .get("http://localhost:8080/api/v1/users")
+                    .then(function (response) {
+                        const data = response.data;
+                        createTableHeader(data);
+                        const tbody = responseTable.querySelector("tbody");
+                        tbody.innerHTML = "";
+
+                        data.forEach(function (item) {
+                            const tr = document.createElement("tr");
+
+                            for (const key in item) {
+                                if (item.hasOwnProperty(key)) {
+                                    const td = document.createElement("td");
+                                    td.textContent = item[key];
+                                    tr.appendChild(td);
+                                }
+                            }
+
+                            const editButton = createButton("Редагувати");
+                            editButton.addEventListener("click", function () {
+                                window.location.href = `edit.html?id=${item.id}`;
+                            });
+
+                            const deleteButton = createButton("Видалити");
+                            deleteButton.addEventListener("click", function () {
+                                deleteUser(item.id);
+                            });
+
+                            const editTd = document.createElement("td");
+                            editTd.appendChild(editButton);
+                            tr.appendChild(editTd);
+
+                            const deleteTd = document.createElement("td");
+                            deleteTd.appendChild(deleteButton);
+                            tr.appendChild(deleteTd);
+
+                            tbody.appendChild(tr);
+                        });
+                    })
+                    .catch(function (error) {
+                        console.error(
+                            "Помилка при виконанні запиту: " + error.message
+                        );
+                    });
+            }
+
+            function createButton(text) {
+                const button = document.createElement("button");
+                button.textContent = text;
+                return button;
+            }
+
+            function logout() {
+                axios
+                    .post(
+                        "http://localhost:8080/api/v1/auth/signout",
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${window.localStorage.getItem(
+                                    "accessToken"
+                                )}`,
+                            },
+                        }
+                    )
+                    .then(function () {
+                        window.localStorage.removeItem("accessToken");
+                        window.localStorage.removeItem("refreshToken");
+                        window.location.href = "sign-in.html";
+                    })
+                    .catch(function (error) {
+                        console.error("Помилка при виході: " + error.message);
+                    });
+            }
+
+            document
+                .getElementById("logout-button")
+                .addEventListener("click", logout);
+            refreshTable();
+        </script>
+    </body>
+</html>

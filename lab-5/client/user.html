@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Кабінет користувача</title>
+    </head>
+    <body>
+        <h1>Кабінет користувача</h1>
+
+        <div id="user-info"></div>
+
+        <h2>Редагування даних</h2>
+        <div>
+            <label for="name">Ім'я:</label>
+            <input type="text" id="name" name="name" required />
+            <br />
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required />
+            <br />
+            <label for="group">Група:</label>
+            <input type="text" id="group" name="group" required />
+            <br />
+            <label for="variant">Варіант:</label>
+            <input type="text" id="variant" name="variant" required />
+            <br />
+            <button id="update-button">Зберегти зміни</button>
+        </div>
+
+        <button id="logout-button">Вийти</button>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script>
+            const userId = window.localStorage.getItem("id");
+
+            function loadUserData() {
+                axios
+                    .get(`http://localhost:8080/api/v1/users/${userId}`, {
+                        headers: {
+                            Authorization: `Bearer ${window.localStorage.getItem(
+                                "accessToken"
+                            )}`,
+                        },
+                    })
+                    .then(function (response) {
+                        const userData = response.data;
+
+                        document.getElementById("name").value = userData.name;
+                        document.getElementById("email").value = userData.email;
+                        document.getElementById("group").value = userData.group;
+                        document.getElementById("variant").value =
+                            userData.variant;
+                    })
+                    .catch(function (error) {
+                        console.error(
+                            "Помилка при завантаженні даних користувача: " +
+                                error.message
+                        );
+                    });
+            }
+
+            function updateUserData() {
+                const name = document.getElementById("name").value;
+                const email = document.getElementById("email").value;
+                const group = document.getElementById("group").value;
+                const variant = document.getElementById("variant").value;
+
+                const data = {
+                    name,
+                    email,
+                    group,
+                    variant,
+                };
+
+                axios
+                    .patch(
+                        `http://localhost:8080/api/v1/users/${userId}`,
+                        data,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${window.localStorage.getItem(
+                                    "accessToken"
+                                )}`,
+                            },
+                        }
+                    )
+                    .then(function (response) {
+                        loadUserData();
+                        alert("Дані успішно оновлено!");
+                    })
+                    .catch(function (error) {
+                        console.error(
+                            "Помилка при оновленні даних користувача: " +
+                                error.message
+                        );
+                    });
+            }
+
+            function logout() {
+                axios
+                    .post(
+                        "http://localhost:8080/api/v1/auth/signout",
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${window.localStorage.getItem(
+                                    "accessToken"
+                                )}`,
+                            },
+                        }
+                    )
+                    .then(function (response) {
+                        window.localStorage.removeItem("accessToken");
+                        window.localStorage.removeItem("refreshToken");
+                        window.location.href = "sign-in.html";
+                    })
+                    .catch(function (error) {
+                        console.error("Помилка при виході: " + error.message);
+                    });
+            }
+
+            loadUserData();
+            document
+                .getElementById("update-button")
+                .addEventListener("click", updateUserData);
+            document
+                .getElementById("logout-button")
+                .addEventListener("click", logout);
+        </script>
+    </body>
+</html>
