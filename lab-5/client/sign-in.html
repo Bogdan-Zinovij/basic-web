@@ -50,9 +50,9 @@
                         ] = `Bearer ${accessToken}`;
 
                         if (userData.role === "Admin") {
-                            window.location.href = `admin.html?id=${userData.id}`;
+                            window.location.href = `admin.html`;
                         } else {
-                            window.location.href = `user.html?id=${userData.id}`;
+                            window.location.href = `user.html`;
                         }
                     })
                     .catch(function (error) {
